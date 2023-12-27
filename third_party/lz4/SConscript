@@ -1,0 +1,11 @@
+# RT-Thread building script for component
+
+from building import *
+
+cwd = GetCurrentDir()
+src = Glob('lib/*.c')
+CPPPATH = [cwd + '/lib']
+
+group = DefineGroup('lz4', src, depend = ['PKG_USING_UOTA'], CPPPATH = CPPPATH)
+
+Return('group')
