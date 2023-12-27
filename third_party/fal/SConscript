@@ -4,9 +4,6 @@ import rtconfig
 cwd     = GetCurrentDir()
 src     = Glob('src/*.c')
 path = [cwd + '/inc']
-path += [cwd + '/samples/porting']
-
-src += [cwd + '/samples/porting/fal_flash_stm32f2_port.c']
 
 group = DefineGroup('Fal', src, depend = ['PKG_USING_UOTA'], CPPPATH = path)
 
