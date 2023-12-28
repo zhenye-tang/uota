@@ -18,7 +18,7 @@ struct decompress_ops
 {
     uota_decompress_t (*create)(void);
     int (*update)(uota_decompress_t dec, void *src_data, int data_len);
-    int (*finish)(uota_decompress_t dec);
+    int (*start)(uota_decompress_t dec, const char* partion_name, int offect, int size);
     int (*destory)(uota_decompress_t dec);
 };
 
@@ -30,8 +30,7 @@ struct uota_decompress
 };
 
 uota_decompress_t uota_decompress_create(compress_type_t type);
-int uota_decompress_update(uota_decompress_t dec, void* src_data, int data_len);
-int uota_decompress_finish(uota_decompress_t dec);
+int uota_decompress_start(uota_decompress_t dec, const char *partion_name, int offect, int size);
 int uota_decompress_destory(uota_decompress_t dec);
 
 void uota_decompress_set_callback(uota_decompress_t dec, decompress_callback callback);

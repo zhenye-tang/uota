@@ -7,11 +7,10 @@ cwd = GetCurrentDir()
 
 src = Glob('src/*.c')
 
-if GetDepend('ZLIB_USING_SAMPLE'):
-    src += Glob('zlib_sample.c')
+src += Glob('zlib_sample.c')
 
 CPPPATH = [cwd + '/src']
 
-group = DefineGroup('zlib', src, depend = ['PKG_USING_ZLIB'], CPPPATH = CPPPATH)
+group = DefineGroup('zlib', src, depend = ['PKG_USING_UOTA'], CPPPATH = CPPPATH)
 
 Return('group')

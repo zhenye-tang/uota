@@ -16,7 +16,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
-#include <dfs_posix.h>
+#include <dfs_file.h>
 #include "zlib.h"
 
 #define CHUNK 4096

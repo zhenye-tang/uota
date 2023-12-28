@@ -22,14 +22,9 @@ uota_decompress_t uota_decompress_create(compress_type_t type)
     return NULL;
 }
 
-int uota_decompress_update(uota_decompress_t dec, void* src_data, int data_len)
+int uota_decompress_start(uota_decompress_t dec, const char* partion_name, int offect, int size)
 {
-    return dec->ops->update(dec, src_data, data_len);
-}
-
-int uota_decompress_finish(uota_decompress_t dec)
-{
-    return dec->ops->finish(dec);
+    return dec->ops->start(dec, partion_name, offect, size);
 }
 
 int uota_decompress_destory(uota_decompress_t dec)
