@@ -28,37 +28,38 @@ static uota_decompress_t lz4_ctx_create(void)
 static int lz4_start(uota_decompress_t dec, const char* partion_name, int offect, int size)
 {
     struct uota_lz4* lz4_obj = (struct uota_lz4*)dec;
-    fal_partition_t partition = fal_partition_find(partion_name);
+    const fal_partition_t partition = fal_partition_find(partion_name);
     int total_size = size;
-    int decompress_block_size;
+    int decompress_block_size = 0;
     int read_size = 0;
+
     if (partition)
     {
         do
         {
-            /* read compress size */
-            read_size = fal_partition_read(partition, offect, &decompress_block_size, sizeof(int));
+            read_size = fal_partition_read(partition, offect, (uint8_t *)&decompress_block_size, sizeof(int));
+
             if (read_size)
             {
-                /* read a block size */
                 offect += read_size;
                 read_size = fal_partition_read(partition, offect, lz4_obj->compress_buffer, decompress_block_size);
 
                 int raw_size = LZ4_decompress_safe_continue(&lz4_obj->ctx, lz4_obj->compress_buffer, lz4_obj->raw_buffer, decompress_block_size, LZ4_RAW_BUFFER_SIZE);
                 if (lz4_obj->parent.callback)
                     lz4_obj->parent.callback(lz4_obj->raw_buffer, raw_size);
+
+                offect += read_size;
+                read_size += sizeof(int);
             }
-            total_size -= read_size + sizeof(int);
+            else
+            {
+                break;
+            }
+            total_size -= read_size;
         } while (total_size);
     }
 
-    return 0;
-}
-
-static int lz4_finish(uota_decompress_t dec)
-{
-    (void)dec;
-    return 0;
+    return total_size ? -1 : 0;
 }
 
 static int lz4_destory(uota_decompress_t dec)
@@ -66,6 +67,7 @@ static int lz4_destory(uota_decompress_t dec)
     struct uota_lz4* lz4_obj = (struct uota_lz4*)dec;
     memset(&lz4_obj->ctx, 0, sizeof(LZ4_streamDecode_t));
     free(lz4_obj->raw_buffer);
+    free(lz4_obj->compress_buffer);
 
     return 0;
 }

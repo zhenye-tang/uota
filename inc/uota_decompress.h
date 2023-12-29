@@ -1,6 +1,4 @@
-﻿
-
-#ifndef __UOTA_DECOMPRESS_H__
+﻿#ifndef __UOTA_DECOMPRESS_H__
 #define __UOTA_DECOMPRESS_H__
 
 typedef enum compress_type
