@@ -4,7 +4,6 @@
 typedef enum digest_type
 {
     UOTA_MD5,
-    UOTA_CRC32,
     UOTA_SHA1,
     UOTA_SHA256,
 }digest_type_t;

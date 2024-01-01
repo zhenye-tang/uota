@@ -16,8 +16,8 @@ uota_decompress_t uota_decompress_create(compress_type_t type)
 {
     for (int i = 0; i < DECOMPRESSOR_SIZE; i++)
     {
-        if (decompress_obj[i] && decompress_obj[i]->type)
-            return decompress_obj[i];
+        if (decompress_obj[i] && decompress_obj[i]->type == type)
+            return decompress_obj[i]->ops->create();
     }
     return NULL;
 }

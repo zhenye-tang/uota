@@ -16,8 +16,8 @@ uota_digest_t uota_digest_create(digest_type_t type)
 {
     for (int i = 0; i < DIGESTOR_SIZE; i++)
     {
-        if (digest_obj[i] && digest_obj[i]->type)
-            return digest_obj[i];
+        if (digest_obj[i] && digest_obj[i]->type == type)
+            return digest_obj[i]->ops->create();
     }
     return NULL;
 }

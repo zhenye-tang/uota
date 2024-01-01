@@ -1,5 +1,6 @@
 #include "uota_digest.h"
 #include "tiny_md5.h"
+#include "rtthread.h"
 
 struct uota_md5
 {
@@ -50,3 +51,4 @@ int uota_md5_init()
     uota_digest_register(&md5.parent);
     return 0;
 }
+INIT_APP_EXPORT(uota_md5_init, uota_md5_init);

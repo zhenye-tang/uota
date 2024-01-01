@@ -3,7 +3,6 @@
 
 typedef enum compress_type
 {
-    UOTA_NONE,
     UOTA_LZ4,
     UOTA_ZIP,
     UOTA_FASTLZ
