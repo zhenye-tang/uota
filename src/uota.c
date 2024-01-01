@@ -16,23 +16,22 @@
 
 #define MAGIC_NUM                       0x756F7461
 #define UOTA_TEMP_BUFFER_SIZE           (2048)
+#define UOTA_HEAD_SIZE       (sizeof(struct uota_head))
 
 static uint8_t temp_buffer[UOTA_TEMP_BUFFER_SIZE];
 
 struct uota_head
 {
-    char magic[4];                      /* magic: 'uota' */
-    uint32_t image_size;                     /* 镜像大小, 包括头大小 */
-    char image_version[8];              /* 镜像版本号 */
-    char image_partition[8];            /* 镜像所在的分区名字 */
-    unsigned char image_digest[32];     /* 整个镜像的指纹 md5 */
-    uint32_t image_digest_len;          /*  */   
-    digest_type_t digest_type;          /* 采用的摘要算法, 为了验证固件完整性, 必选项, hash(image.bin) */
-    compress_type_t compress_type;           /* 采用的压缩算法, 非必选, compress(image.bin/image.diff) */
-    uint32_t raw_size;                      /* 镜像原始尺寸 */
+    char magic[4];                      /* magic */
+    uint32_t image_size;                /* image size */
+    char image_version[8];              /* image version */
+    char image_partition[8];            /* partition name */
+    unsigned char image_digest[32];     /* images hash */
+    uint32_t image_digest_len;          /* images hash len */
+    digest_type_t digest_type;          /* digest algo */
+    compress_type_t compress_type;      /* compress algo */
+    uint32_t raw_size;                  /* image raw size */
 };
-
-#define UOTA_HEAD_SIZE       (sizeof(struct uota_head))
 
 int uota_image_check(const char* partition_name);
 static unsigned int read_u32(const unsigned char* buf);
@@ -42,7 +41,6 @@ static int digest_test()
 {
     static uint8_t buff[1024];
     uint8_t digest[16];
-    struct uota_head head;
     int read_size;
     uota_digest_t digest_obj = uota_digest_create(0);
     int fd = open("/nor/yes.md5", O_RDONLY);
@@ -175,20 +173,13 @@ int uota_image_check(const char* partition_name)
     return err;
 }
 
-
-/* 获取镜像尺寸 */
 int uota_get_image_size(const char* partition_name)
 {
-    /*  */
-
     return 0;
 }
 
-/* 获取镜像原始尺寸，解压后的固件大小 */
 int uota_get_image_raw_size(const char* partition_name)
 {
-    /*  */
-
     return 0;
 }
 
@@ -262,14 +253,8 @@ static int uota_decompress_test(const char* partition_name)
     return 0;
 }
 
-
-/* 开始搬运固件，将固件搬运到指定的位置 */
 int uota_image_upgrade(const char* src_partition, const char* dst_partition)
 {
-
-
-
-
     return 0;
 }
 
