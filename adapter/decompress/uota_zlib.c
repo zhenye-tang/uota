@@ -1,13 +1,12 @@
 #include "uota_decompress.h"
 #include "zlib.h"
 
-
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <fal.h>
 
-#define ZLIB_RAW_BUFFER_SIZE             (16*1026)
+#define ZLIB_RAW_BUFFER_SIZE             (16*1024)
 
 struct uota_zlib
 {
@@ -70,6 +69,9 @@ static int zlib_start(uota_decompress_t dec, const char* partion_name, int offec
         offect += read_size;
     } while (ret != Z_STREAM_END);
 
+    if (zib_obj->parent.callback)
+        zib_obj->parent.callback(NULL, 0);
+
 __exit:
     (void)inflateEnd(&zib_obj->ctx);
     return ret;
@@ -77,7 +79,6 @@ __exit:
 
 static int zlib_destory(uota_decompress_t dec)
 {
-    /* TODO */
     return 0;
 }
 
@@ -94,4 +95,4 @@ int uota_zlib_init()
     uota_decompress_register(&zlib.parent);
     return 0;
 }
-
+INIT_APP_EXPORT(uota_zlib_init, uota_zlib_init);

@@ -244,7 +244,7 @@ static int uota_decompress_test(const char* partition_name)
     unsigned char calc_image_digest[32] = { 0 };
     uint32_t image_size = 0, offect = UOTA_HEAD_SIZE;
     int loop_num = 0, reman_size = 0, digest_len = 0;
-    uota_decompress_t decompressor = uota_decompress_create(UOTA_LZ4);
+    uota_decompress_t decompressor = uota_decompress_create(UOTA_ZIP);
     fal_partition_read(partition, 0, &head, UOTA_HEAD_SIZE);
 
     uota_decompress_set_callback(decompressor, uota_decompress_callback);
