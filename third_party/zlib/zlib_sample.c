@@ -17,6 +17,7 @@
 #include <string.h>
 #include <assert.h>
 #include <dfs_file.h>
+#include <unistd.h>
 #include "zlib.h"
 
 #define CHUNK 4096
@@ -29,7 +30,7 @@ static char out[CHUNK];
    level is supplied, Z_VERSION_ERROR if the version of zlib.h and the
    version of the library linked do not match, or Z_ERRNO if there is
    an error reading or writing the files. */
-int def(FILE *source, FILE *dest, int level)
+int def(int source, int dest, int level)
 {
     int ret, flush;
     unsigned have;
@@ -45,12 +46,13 @@ int def(FILE *source, FILE *dest, int level)
 
     /* compress until end of file */
     do {
-        strm.avail_in = fread(in, 1, CHUNK, source);
-        if (ferror(source)) {
-            (void)deflateEnd(&strm);
-            return Z_ERRNO;
-        }
-        flush = feof(source) ? Z_FINISH : Z_NO_FLUSH;
+        strm.avail_in = read(source, in, CHUNK);
+        //if (ferror(source)) {
+        //    (void)deflateEnd(&strm);
+        //    return Z_ERRNO;
+        //}
+
+        flush = strm.avail_in ? Z_NO_FLUSH:Z_FINISH;
         strm.next_in = in;
 
         /* run deflate() on input until output buffer not full, finish
@@ -61,7 +63,7 @@ int def(FILE *source, FILE *dest, int level)
             ret = deflate(&strm, flush);    /* no bad return value */
             assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
             have = CHUNK - strm.avail_out;
-            if (fwrite(out, 1, have, dest) != have || ferror(dest)) {
+            if (write(dest, out, have) != have) {
                 (void)deflateEnd(&strm);
                 return Z_ERRNO;
             }
@@ -83,7 +85,7 @@ int def(FILE *source, FILE *dest, int level)
    invalid or incomplete, Z_VERSION_ERROR if the version of zlib.h and
    the version of the library linked do not match, or Z_ERRNO if there
    is an error reading or writing the files. */
-int inf(FILE *source, FILE *dest)
+int inf(int source, int dest)
 {
     int ret;
     unsigned have;
@@ -101,11 +103,11 @@ int inf(FILE *source, FILE *dest)
 
     /* decompress until deflate stream ends or end of file */
     do {
-        strm.avail_in = fread(in, 1, CHUNK, source);
-        if (ferror(source)) {
-            (void)inflateEnd(&strm);
-            return Z_ERRNO;
-        }
+        strm.avail_in = read(source, in, CHUNK);
+        //if (ferror(source)) {
+        //    (void)inflateEnd(&strm);
+        //    return Z_ERRNO;
+        //}
         if (strm.avail_in == 0)
             break;
         strm.next_in = in;
@@ -125,7 +127,7 @@ int inf(FILE *source, FILE *dest)
                 return ret;
             }
             have = CHUNK - strm.avail_out;
-            if (fwrite(out, 1, have, dest) != have || ferror(dest)) {
+            if (write(dest, out, have) != have) {
                 (void)inflateEnd(&strm);
                 return Z_ERRNO;
             }
@@ -166,7 +168,7 @@ void zerr(int ret)
 
 int zlib_test(int argc, char ** argv)
 {
-    FILE *fd_in, *fd_out;
+    int fd_in = -1, fd_out = -1;
     int ret  = 0;
 
     if (argc != 4)
@@ -179,16 +181,17 @@ int zlib_test(int argc, char ** argv)
         goto _exit;
     }
 
-    fd_in = fopen(argv[2], "r");
-    if (fd_in == NULL)
+    fd_in = open(argv[2], O_RDONLY);
+    if (fd_in < 0)
     {
+        perror("打开文件test.txt失败啦");
         rt_kprintf("[zlib] open the input file : %s error!\n", argv[2]);
         ret = -1;
         goto _exit;
     }
 
-    fd_out = fopen(argv[3], "w+");
-    if (fd_out == NULL)
+    fd_out = open(argv[3], O_RDWR | O_CREAT | O_TRUNC);
+    if (fd_out < 0)
     {
         rt_kprintf("[zlib] open the output file : %s error!\n", argv[3]);
         ret = -1;
@@ -226,14 +229,14 @@ int zlib_test(int argc, char ** argv)
     }
 
 _exit:
-    if(fd_in != NULL)
+    if(fd_in > 0)
     {
-        fclose(fd_in);
+        close(fd_in);
     }
 
-    if(fd_out != NULL)
+    if(fd_out > 0)
     {
-        fclose(fd_out);
+        close(fd_out);
     }
 
     return ret;
