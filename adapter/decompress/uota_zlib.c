@@ -95,4 +95,4 @@ int uota_zlib_init()
     uota_decompress_register(&zlib.parent);
     return 0;
 }
-INIT_APP_EXPORT(uota_zlib_init, uota_zlib_init);
+INIT_APP_EXPORT(uota_zlib_init);

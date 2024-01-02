@@ -44,6 +44,7 @@
 #define TINY_CRYPT_AES
 #define TINY_CRYPT_SHA512
 #define TINY_CRYPT_SHA256
+#define TINY_CRYPT_SHA1
 
 #define tiny_malloc  malloc
 #define tiny_free    free
