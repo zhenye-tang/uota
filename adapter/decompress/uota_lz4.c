@@ -49,7 +49,7 @@ static int lz4_start(uota_decompress_t dec, const char* partion_name, int offect
                     int raw_size = LZ4_decompress_safe_continue(&lz4_obj->ctx, lz4_obj->compress_buffer, dec_ptr, read_size, LZ4_RAW_BUFFER_SIZE);
 
                     if (lz4_obj->parent.callback)
-                        lz4_obj->parent.callback(dec_ptr, raw_size);
+                        lz4_obj->parent.callback(dec_ptr, raw_size, lz4_obj->parent.userdata);
                 }
                 else
                 {
@@ -67,7 +67,7 @@ static int lz4_start(uota_decompress_t dec, const char* partion_name, int offect
         } while (total_size);
 
         if (lz4_obj->parent.callback)
-            lz4_obj->parent.callback(NULL, 0);
+            lz4_obj->parent.callback(NULL, 0, lz4_obj->parent.userdata);
     }
 
     return total_size ? -1 : 0;
@@ -96,4 +96,3 @@ int uota_lz4_init(void)
     uota_decompress_register(&lz4.parent);
     return 0;
 }
-INIT_APP_EXPORT(uota_lz4_init);

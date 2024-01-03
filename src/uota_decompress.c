@@ -32,9 +32,10 @@ int uota_decompress_destory(uota_decompress_t dec)
     return dec->ops->destory(dec);
 }
 
-void uota_decompress_set_callback(uota_decompress_t dec, decompress_callback callback)
+void uota_decompress_set_callback(uota_decompress_t dec, decompress_callback callback, void* userdata)
 {
     dec->callback = callback;
+    dec->userdata = userdata;
 }
 
 int uota_decompress_register(uota_decompress_t dec)

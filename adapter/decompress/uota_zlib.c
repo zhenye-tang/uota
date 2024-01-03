@@ -64,13 +64,13 @@ static int zlib_start(uota_decompress_t dec, const char* partion_name, int offec
             have = ZLIB_RAW_BUFFER_SIZE - zib_obj->ctx.avail_out;
             /* call user function */
             if (zib_obj->parent.callback)
-                zib_obj->parent.callback(zib_obj->raw_buf, have);
+                zib_obj->parent.callback(zib_obj->raw_buf, have, zib_obj->parent.userdata);
         } while (zib_obj->ctx.avail_out == 0);
         offect += read_size;
     } while (ret != Z_STREAM_END);
 
     if (zib_obj->parent.callback)
-        zib_obj->parent.callback(NULL, 0);
+        zib_obj->parent.callback(NULL, 0, zib_obj->parent.userdata);
 
 __exit:
     (void)inflateEnd(&zib_obj->ctx);
@@ -88,11 +88,10 @@ static struct decompress_ops ops = {
     .destory = zlib_destory
 };
 
-int uota_zlib_init()
+int uota_zlib_init(void)
 {
     zlib.parent.type = UOTA_ZIP;
     zlib.parent.ops = &ops;
     uota_decompress_register(&zlib.parent);
     return 0;
 }
-INIT_APP_EXPORT(uota_zlib_init);

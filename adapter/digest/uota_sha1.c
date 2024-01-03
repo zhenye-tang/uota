@@ -1,6 +1,5 @@
 #include "uota_digest.h"
 #include "tiny_sha1.h"
-#include "rtthread.h"
 
 struct uota_sha1
 {
@@ -27,7 +26,7 @@ static int sha1_finish(uota_digest_t digestor, void* hash)
 {
     struct uota_sha1* sha1_obj = (struct uota_sha1*)digestor;
     tiny_sha1_finish(&sha1_obj->ctx, (unsigned char*)hash);
-    return 16;
+    return 20;
 }
 
 static int sha1_destory(uota_digest_t digestor)
@@ -51,4 +50,3 @@ int uota_sha1_init(void)
     uota_digest_register(&sha1.parent);
     return 0;
 }
-INIT_APP_EXPORT(uota_sha1_init);

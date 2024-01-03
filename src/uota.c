@@ -10,8 +10,6 @@
 #include "fal.h"
 #include "uota_decompress.h"
 #include "uota_digest.h"
-#include "dfs_file.h"
-#include <dfs_fs.h>
 #include <unistd.h>
 
 #define MAGIC_NUM                       0x756F7461
@@ -33,65 +31,12 @@ struct uota_head
     uint32_t raw_size;                  /* image raw size */
 };
 
-int uota_image_check(const char* partition_name);
-static unsigned int read_u32(const unsigned char* buf);
-static int uota_decompress_test(const char* partition_name);
-
-static int digest_test()
+struct uota_upgrade
 {
-    static uint8_t buff[1024];
-    uint8_t digest[16];
-    int read_size;
-    uota_digest_t digest_obj = uota_digest_create(0);
-    int fd = open("/nor/yes.md5", O_RDONLY);
-
-    while ((read_size = read(fd, buff, 1024)) > 0)
-    {
-        uota_digest_update(digest_obj, buff, read_size);
-    }
-    uota_digest_finish(digest_obj, digest);
-    for (int i = 0; i < 16; i++)
-    {
-        rt_kprintf("%x ", digest[i]);
-    }
-    rt_kprintf("\n");
-
-    close(fd);
-}
-MSH_CMD_EXPORT(digest_test, digest_test);
-
-static int print_header(void)
-{
-    struct uota_head head;
-    const struct fal_partition* partition = fal_partition_find("download");
-    fal_partition_read(partition, 0, (uint8_t*)&head, sizeof(struct uota_head));
-
-    int magic = read_u32(head.magic);
-
-    if (magic == MAGIC_NUM)
-        rt_kprintf("yes\n");
-
-    rt_kprintf("magic = %s\n", head.magic);
-    rt_kprintf("image_size = %d\n", head.image_size);
-    rt_kprintf("image_version = %s\n", head.image_version);
-    rt_kprintf("image_partition = %s\n", head.image_partition);
-    rt_kprintf("image_digest_len = %d\n", head.image_digest_len);
-    rt_kprintf("digest_type = %d\n", head.digest_type);
-    rt_kprintf("compress_type = %d\n", head.compress_type);
-    rt_kprintf("raw_size = %d\n", head.raw_size);
-
-    for (int i = 0; i < head.image_digest_len; i++)
-    {
-        rt_kprintf("%x ", head.image_digest[i]);
-    }
-    rt_kprintf("\n");
-
-    if(uota_image_check("download") == 0)
-        uota_decompress_test("download");
-
-    return 0;
-}
-MSH_CMD_EXPORT(print_header, print_header);
+    const struct fal_partition* src;
+    const struct fal_partition* dst;
+    int offect;
+};
 
 static unsigned int read_u32(const unsigned char* buf)
 {
@@ -104,7 +49,7 @@ static unsigned int read_u32(const unsigned char* buf)
 
 static int uota_image_digest_veryfi(const struct fal_partition* partition, uota_digest_t digestor)
 {
-    int err = -1;
+    int err = -UOTA_ERROR;
     struct uota_head head;
     unsigned char image_digest[32] = {0};
     unsigned char calc_image_digest[32] = {0};
@@ -147,7 +92,7 @@ static int uota_image_digest_veryfi(const struct fal_partition* partition, uota_
         digest_len = uota_digest_finish(digestor, calc_image_digest);
         if (loop_num == -1 && !reman_size && !rt_memcmp(image_digest, calc_image_digest, digest_len))
         {
-            err = 0;
+            err = UOTA_OK;
         }
     }
 
@@ -156,7 +101,6 @@ static int uota_image_digest_veryfi(const struct fal_partition* partition, uota_
 
 int uota_image_check(const char* partition_name)
 {
-    int err = -1;
     struct uota_head head;
     uota_digest_t digest_obj = NULL;
     const struct fal_partition* partition = fal_partition_find(partition_name);
@@ -168,9 +112,7 @@ int uota_image_check(const char* partition_name)
             (digest_obj = uota_digest_create(head.digest_type))
         );
 
-    err = success ? uota_image_digest_veryfi(partition, digest_obj) : err;
-
-    return err;
+    return success ? uota_image_digest_veryfi(partition, digest_obj) : -UOTA_ERROR;
 }
 
 int uota_get_image_size(const char* partition_name)
@@ -183,78 +125,48 @@ int uota_get_image_raw_size(const char* partition_name)
     return 0;
 }
 
-static int raw_file = -1;
-
-#include "lz4.h"
-
-static int check_lz4(void)
+static int uota_decompress_callback(void* raw_data, int data_len, void *userdata)
 {
-    static uint8_t block_buffer[18*1024];
-    static uint8_t raw_buffer[18 * 1024];
-
-    int fd = raw_file = open("/nor/rtt.rbl", O_RDONLY);
-    int dst_fd = raw_file = open("rtt.bin", O_WRONLY | O_CREAT | O_TRUNC);
-    read(fd, block_buffer, sizeof(struct uota_head));
-    int compress_size = 0;
-    LZ4_streamDecode_t lz4 = {0};
-
-    for (;;)
+    struct uota_upgrade* upgrade = (struct uota_upgrade *)userdata;
+    if (raw_data && data_len > 0)
     {
-        int block_size = read(fd, &compress_size, 4);
-        if (block_size <= 0)
+        if (fal_partition_write(upgrade->dst, upgrade->offect, raw_data, data_len) == data_len)
         {
-            break;
+            upgrade->offect += data_len;
         }
-
-        int read_size = read(fd, block_buffer, compress_size);
-        int raw_size = LZ4_decompress_safe_continue(&lz4, block_buffer, raw_buffer, read_size, 18 * 1024);
-        write(dst_fd, raw_buffer, raw_size);
-    }
-    close(fd);
-    close(dst_fd);
-    return 0;
-}
-MSH_CMD_EXPORT(check_lz4, check_lz4);
-
-static int uota_decompress_callback(void* raw_data, int data_len)
-{
-    if (raw_file < 0)
-        raw_file = open("raw_file.dll", O_WRONLY | O_CREAT | O_TRUNC);
-
-    if (raw_file > 0 && data_len)
-    {
-        write(raw_file, raw_data, data_len);
     }
 
-    if (data_len == 0)
-    {
-        close(raw_file);
-        raw_file = -1;
-        rt_kprintf("decompress success.\n");
-    }
     return data_len;
 }
 
-static int uota_decompress_test(const char* partition_name)
+static int uota_erase_partition(const struct fal_partition* part, int image_size)
 {
-    const struct fal_partition* partition = fal_partition_find(partition_name);
-    int err = -1;
-    struct uota_head head;
-    unsigned char image_digest[32] = { 0 };
-    unsigned char calc_image_digest[32] = { 0 };
-    uint32_t image_size = 0, offect = UOTA_HEAD_SIZE;
-    int loop_num = 0, reman_size = 0, digest_len = 0;
-    uota_decompress_t decompressor = uota_decompress_create(UOTA_ZIP);
-    fal_partition_read(partition, 0, &head, UOTA_HEAD_SIZE);
-
-    uota_decompress_set_callback(decompressor, uota_decompress_callback);
-    uota_decompress_start(decompressor, partition_name, UOTA_HEAD_SIZE, head.image_size - UOTA_HEAD_SIZE);
-    uota_decompress_destory(decompressor);
-    return 0;
+    return fal_partition_erase(part, 0, image_size);
 }
 
 int uota_image_upgrade(const char* src_partition, const char* dst_partition)
 {
-    return 0;
-}
+    const struct fal_partition* dst_part = NULL, *src_part = NULL;
+    uota_decompress_t decompressor = NULL;
+    struct uota_head image_header;
+    int success = (
+            (uota_image_check(src_partition) == 0) &&
+            (src_part = fal_partition_find(src_partition)) &&
+            (dst_part = fal_partition_find(dst_partition)) &&
+            (fal_partition_read(src_part, 0, (uint8_t *)&image_header, UOTA_HEAD_SIZE) == UOTA_HEAD_SIZE) &&
+            (dst_part->len >= image_header.raw_size) &&
+            (decompressor = uota_decompress_create(image_header.compress_type)) &&
+            (uota_erase_partition(dst_part, image_header.raw_size) >= 0)
+        );
 
+    struct uota_upgrade upgrade = { src_part , dst_part, 0};
+
+    if (success)
+    {
+        uota_decompress_set_callback(decompressor, uota_decompress_callback, &upgrade);
+        uota_decompress_start(decompressor, src_partition, UOTA_HEAD_SIZE, image_header.image_size - UOTA_HEAD_SIZE);
+        uota_decompress_destory(decompressor);
+    }
+
+    return success ? UOTA_OK : UOTA_ERROR;
+}
