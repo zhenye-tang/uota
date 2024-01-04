@@ -117,12 +117,24 @@ int uota_image_check(const char* partition_name)
 
 int uota_get_image_size(const char* partition_name)
 {
-    return 0;
+    int image_size = -1;
+    struct uota_head head;
+    const struct fal_partition* partition = fal_partition_find(partition_name);
+    if (partition && (fal_partition_read(partition, 0, (uint8_t*)&head, UOTA_HEAD_SIZE) == UOTA_HEAD_SIZE))
+        image_size = head.image_size;
+
+    return image_size;
 }
 
 int uota_get_image_raw_size(const char* partition_name)
 {
-    return 0;
+    int image_raw_size = -1;
+    struct uota_head head;
+    const struct fal_partition* partition = fal_partition_find(partition_name);
+    if (partition && (fal_partition_read(partition, 0, (uint8_t*)&head, UOTA_HEAD_SIZE) == UOTA_HEAD_SIZE))
+        image_raw_size = head.raw_size;
+
+    return image_raw_size;
 }
 
 static int uota_decompress_callback(void* raw_data, int data_len, void *userdata)
