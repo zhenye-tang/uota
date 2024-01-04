@@ -1,4 +1,12 @@
-﻿#include "uota_decompress.h"
+﻿/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Change Logs:
+ * Date           Author       Notes
+ * 2023-12-27     tzy          first implementation
+ */
+
+#include "uota_decompress.h"
 #include "lz4.h"
 #include <string.h>
 #include <stdint.h>
@@ -24,7 +32,7 @@ static uota_decompress_t lz4_ctx_create(void)
     LZ4_setStreamDecode(&lz4.ctx, NULL, 0);
     lz4.raw_buffer[0] = malloc(LZ4_RAW_BUFFER_SIZE * 2);
     lz4.raw_buffer[1] = lz4.raw_buffer[0] + LZ4_RAW_BUFFER_SIZE;
-    lz4.compress_buffer = malloc(LZ4_COMPRESSBOUND(LZ4_RAW_BUFFER_SIZE));
+    lz4.compress_buffer = malloc(LZ4_COMPRESS_BUFFER_SIZE);
     return &lz4.parent;
 }
 

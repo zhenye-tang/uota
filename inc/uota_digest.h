@@ -1,4 +1,12 @@
-﻿#ifndef __UOTA_DIGEST_H__
+﻿/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Change Logs:
+ * Date           Author       Notes
+ * 2023-12-26     tzy          first implementation
+ */
+
+#ifndef __UOTA_DIGEST_H__
 #define __UOTA_DIGEST_H__
 
 typedef enum digest_type

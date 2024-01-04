@@ -1,3 +1,11 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Change Logs:
+ * Date           Author       Notes
+ * 2023-12-29     tzy          first implementation
+ */
+
 #include "uota_decompress.h"
 #include "zlib.h"
 

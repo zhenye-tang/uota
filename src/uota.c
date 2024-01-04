@@ -10,11 +10,11 @@
 #include "fal.h"
 #include "uota_decompress.h"
 #include "uota_digest.h"
-#include <unistd.h>
+#include <string.h>
 
 #define MAGIC_NUM                       0x756F7461
 #define UOTA_TEMP_BUFFER_SIZE           (2048)
-#define UOTA_HEAD_SIZE       (sizeof(struct uota_head))
+#define UOTA_HEAD_SIZE                  (sizeof(struct uota_head))
 
 static uint8_t temp_buffer[UOTA_TEMP_BUFFER_SIZE];
 
@@ -58,8 +58,8 @@ static int uota_image_digest_veryfi(const struct fal_partition* partition, uota_
 
     if (fal_partition_read(partition, 0, (uint8_t*)&head, UOTA_HEAD_SIZE) == UOTA_HEAD_SIZE)
     {
-        rt_memcpy(image_digest, head.image_digest, head.image_digest_len);
-        rt_memset(head.image_digest, 0, sizeof(head.image_digest));
+        memcpy(image_digest, head.image_digest, head.image_digest_len);
+        memset(head.image_digest, 0, sizeof(head.image_digest));
         image_size = head.image_size;
     }
 
@@ -90,7 +90,7 @@ static int uota_image_digest_veryfi(const struct fal_partition* partition, uota_
         }
 
         digest_len = uota_digest_finish(digestor, calc_image_digest);
-        if (loop_num == -1 && !reman_size && !rt_memcmp(image_digest, calc_image_digest, digest_len))
+        if (loop_num == -1 && !reman_size && !memcmp(image_digest, calc_image_digest, digest_len))
         {
             err = UOTA_OK;
         }

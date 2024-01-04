@@ -1,3 +1,11 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Change Logs:
+ * Date           Author       Notes
+ * 2024-1-1     tzy          first implementation
+ */
+
 #include "uota_digest.h"
 #include "tiny_sha1.h"
 

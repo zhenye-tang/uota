@@ -1,4 +1,12 @@
-﻿#ifndef __UOTA_DECOMPRESS_H__
+﻿/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Change Logs:
+ * Date           Author       Notes
+ * 2023-12-26     tzy          first implementation
+ */
+
+#ifndef __UOTA_DECOMPRESS_H__
 #define __UOTA_DECOMPRESS_H__
 
 typedef enum compress_type
@@ -14,7 +22,6 @@ typedef int (*decompress_callback)(void* raw_data, int data_len, void* userdata)
 struct decompress_ops
 {
     uota_decompress_t (*create)(void);
-    int (*update)(uota_decompress_t dec, void *src_data, int data_len);
     int (*start)(uota_decompress_t dec, const char* partion_name, int offect, int size);
     int (*destory)(uota_decompress_t dec);
 };
