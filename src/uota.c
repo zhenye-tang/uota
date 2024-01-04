@@ -99,6 +99,25 @@ static int uota_image_digest_veryfi(const struct fal_partition* partition, uota_
     return err;
 }
 
+static int uota_decompress_callback(void* raw_data, int data_len, void *userdata)
+{
+    struct uota_upgrade* upgrade = (struct uota_upgrade *)userdata;
+    if (raw_data && data_len > 0)
+    {
+        if (fal_partition_write(upgrade->dst, upgrade->offect, raw_data, data_len) == data_len)
+        {
+            upgrade->offect += data_len;
+        }
+    }
+
+    return data_len;
+}
+
+static int uota_erase_partition(const struct fal_partition* part, int image_size)
+{
+    return fal_partition_erase(part, 0, image_size);
+}
+
 int uota_image_check(const char* partition_name)
 {
     struct uota_head head;
@@ -107,7 +126,7 @@ int uota_image_check(const char* partition_name)
 
     int success = (
             (partition) &&
-            (fal_partition_read(partition, 0, (uint8_t *)&head, UOTA_HEAD_SIZE) == UOTA_HEAD_SIZE) &&
+            (fal_partition_read(partition, 0, (uint8_t*)&head, UOTA_HEAD_SIZE) == UOTA_HEAD_SIZE) &&
             (read_u32(head.magic) == MAGIC_NUM) &&
             (digest_obj = uota_digest_create(head.digest_type))
         );
@@ -137,25 +156,6 @@ int uota_get_image_raw_size(const char* partition_name)
     return image_raw_size;
 }
 
-static int uota_decompress_callback(void* raw_data, int data_len, void *userdata)
-{
-    struct uota_upgrade* upgrade = (struct uota_upgrade *)userdata;
-    if (raw_data && data_len > 0)
-    {
-        if (fal_partition_write(upgrade->dst, upgrade->offect, raw_data, data_len) == data_len)
-        {
-            upgrade->offect += data_len;
-        }
-    }
-
-    return data_len;
-}
-
-static int uota_erase_partition(const struct fal_partition* part, int image_size)
-{
-    return fal_partition_erase(part, 0, image_size);
-}
-
 int uota_image_upgrade(const char* src_partition, const char* dst_partition)
 {
     const struct fal_partition* dst_part = NULL, *src_part = NULL;
@@ -171,14 +171,13 @@ int uota_image_upgrade(const char* src_partition, const char* dst_partition)
             (uota_erase_partition(dst_part, image_header.raw_size) >= 0)
         );
 
-    struct uota_upgrade upgrade = { src_part , dst_part, 0};
-
     if (success)
     {
+        struct uota_upgrade upgrade = { src_part , dst_part, 0 };
         uota_decompress_set_callback(decompressor, uota_decompress_callback, &upgrade);
-        uota_decompress_start(decompressor, src_partition, UOTA_HEAD_SIZE, image_header.image_size - UOTA_HEAD_SIZE);
+        success = !uota_decompress_start(decompressor, src_partition, UOTA_HEAD_SIZE, image_header.image_size - UOTA_HEAD_SIZE);
         uota_decompress_destory(decompressor);
     }
 
-    return success ? UOTA_OK : UOTA_ERROR;
+    return success ? UOTA_OK : -UOTA_ERROR;
 }

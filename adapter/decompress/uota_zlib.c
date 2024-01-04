@@ -79,7 +79,7 @@ static int zlib_start(uota_decompress_t dec, const char* partion_name, int offec
 
 __exit:
     (void)inflateEnd(&zib_obj->ctx);
-    return ret;
+    return ret == Z_OK ? 0 :-1;
 }
 
 static int zlib_destory(uota_decompress_t dec)
