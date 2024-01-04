@@ -9,7 +9,6 @@
 #include "uota_decompress.h"
 #include "lz4.h"
 #include <string.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <fal.h>
 

@@ -8,9 +8,6 @@
 
 #include "uota_decompress.h"
 #include "zlib.h"
-
-#include <string.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <fal.h>
 
@@ -20,22 +17,22 @@ struct uota_zlib
 {
     struct uota_decompress parent;
     z_stream ctx;
-    char raw_buf[ZLIB_RAW_BUFFER_SIZE];
-    char compress_buf[ZLIB_RAW_BUFFER_SIZE];
+    char *raw_buf;
+    char *compress_buf;
 };
 
 static struct uota_zlib zlib;
 
 static uota_decompress_t zlib_ctx_create(void)
 {
-    int ret = 0;
     zlib.ctx.zalloc = Z_NULL;
     zlib.ctx.zfree = Z_NULL;
     zlib.ctx.opaque = Z_NULL;
     zlib.ctx.avail_in = 0;
     zlib.ctx.next_in = Z_NULL;
-    ret = inflateInit(&zlib.ctx);
-    
+    zlib.raw_buf = malloc(ZLIB_RAW_BUFFER_SIZE);
+    zlib.compress_buf = malloc(ZLIB_RAW_BUFFER_SIZE);
+    inflateInit(&zlib.ctx);
     return &zlib.parent;
 }
 
@@ -87,6 +84,11 @@ __exit:
 
 static int zlib_destory(uota_decompress_t dec)
 {
+    struct uota_zlib* zib_obj = (struct uota_zlib*)dec;
+    inflateInit(&zib_obj->ctx);
+    free(zib_obj->compress_buf);
+    free(zib_obj->raw_buf);
+
     return 0;
 }
 
